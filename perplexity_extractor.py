@@ -1,4 +1,6 @@
+import datetime
 from pathlib import Path
+from time import sleep
 from typing import List
 
 import click
@@ -6,6 +8,7 @@ import datasets
 import tqdm
 from datasets.packaged_modules.pandas import pandas
 from joblib import Parallel, delayed
+from pyarrow.types import timestamp
 
 from riverbed.kenlm_manager import *
 import pandas as pd
@@ -100,11 +103,13 @@ def process_chunks_in_parallel(chunks,
         job = (start, stop, idx, sv_file.format(start, stop))
         jobs.append(job)
     files = parallel(delayed(do_process_chunk)(job) for job in tqdm.tqdm(jobs))
-    unify(files, sv_file)
-
+    return files
 
 def unify(savefiles: List[str], template: str):
     csv_file = template.format("all", "unified")
+    print("unifying the following files:")
+    for f in savefiles:
+        print("\t", f)
     if os.path.exists(csv_file):
         print("Detected previous unification attempts, removing...")
         os.remove(csv_file)
@@ -115,6 +120,37 @@ def unify(savefiles: List[str], template: str):
         else:
             pd.DataFrame.from_dict(csv).to_csv(csv_file)
 
+
+def wait_for_other_processes_to_finish(world_size: int, max_wait_periods = 60):
+    def check_for_completion_files():
+        waiting_for = []
+        for i in range(world_size):
+            if not os.path.exists(f"{i}.done"):
+                print(f"waiting for rank {i} to finish")
+                waiting_for.append(i)
+        return waiting_for
+
+    for _ in range(max_wait_periods):
+        if len(check_for_completion_files()) == 0:
+            print("All processes have finished")
+            break
+        else:
+            sleep(60)
+
+def wait_for_other_ranks_to_finish_if_necessary(rank: int, world_size: int):
+    if rank != 0 and world_size != 1:
+        print("Rank", rank, "World_Size", world_size, "therefore no waiting necessary")
+        return
+    else:
+        wait_for_other_processes_to_finish(world_size)
+
+def fetch_files(savefile_template: str, chunk_size: int, n_samples: int):
+    chunks = split(n_samples, chunk_size)
+    filenames = []
+    for idx, (start, stop) in enumerate(tqdm.tqdm(chunks)):
+        savefile_template.format(start, stop)
+        filenames.append(savefile_template)
+    return filenames
 
 @click.command()
 @click.option('--n_samples', default=1000000, help="number of samples to process")
@@ -131,6 +167,7 @@ def main(n_samples: int = -1,
          rank: int = 0,
          world_size: int = 1,
          unify_chunks: bool = True):
+
     n_samples = n_samples if n_samples != -1 else ds_size()
     chunks = split(n_samples, chunk_size)
     if world_size != 1:
@@ -147,8 +184,18 @@ def main(n_samples: int = -1,
         print(f"\t({i})", chunk[0], ":", chunk[1])
 
     if multiprocessing:
+        if os.path.exists(f"{rank}.done"):
+            os.remove(f"{rank}.done")
         print("multiprocessing enabled")
-        process_chunks_in_parallel(chunks, n_jobs=multiprocessing, sv_file=sv_file)
+        files = process_chunks_in_parallel(chunks, n_jobs=multiprocessing, sv_file=sv_file)
+        wait_for_other_ranks_to_finish_if_necessary(rank=rank, world_size=world_size)
+
+        if world_size != 1:
+            print("Fetching all files")
+            files = fetch_files(sv_file, chunk_size, n_samples)
+        with open(f"{rank}.done", "w") as fp:
+            fp.write(str(timestamp()))
+        unify(savefiles=files)
     else:
         print("multiprocessing disabled")
         process_chunks_in_sequence(chunks)
