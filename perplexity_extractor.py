@@ -112,6 +112,7 @@ def main(n_samples: int,
     size = ds_size()
     chunks = split(n_samples, chunk_size)
     if world_size != 1:
+        print("Executing script within a context of world size", world_size)
         n_chunks_per_rank = len(chunks) // world_size
         start_chunk_idx, stop_chunk_idx = rank*n_chunks_per_rank, (rank+1)*n_chunks_per_rank
         chunks = chunks[start_chunk_idx:stop_chunk_idx]

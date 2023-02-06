@@ -7,3 +7,5 @@ huggingface-hub
 sentencepiece
 faiss-gpu
 kenlm
+click
+protobuf
