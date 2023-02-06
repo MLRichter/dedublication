@@ -53,8 +53,8 @@ def split(length, chunk_size):
     return start_stop
 
 
-def ds_size(n_samples: int = None):
-    return len(obtain_dataset(sample_end=n_samples))
+def ds_size(n_samples: int = None, dataset_key: str = None):
+    return len(obtain_dataset(sample_end=n_samples, dataset_key=dataset_key))
 
 
 def add_perplexities_to_result(result: Dict[str, List[int]], perplexities: Dict[str, int]) -> Dict[str, List[int]]:
@@ -63,11 +63,11 @@ def add_perplexities_to_result(result: Dict[str, List[int]], perplexities: Dict[
     return result
 
 
-def process_chunk(start: int, stop: int, index: int):
+def process_chunk(start: int, stop: int, index: int, ds_key: str):
     models = get_model_dict()
     result_csv = {f"perpl_{model}": [] for model in models.keys()}
     result_csv["idx"] = []
-    dataset = obtain_dataset(0)
+    dataset = obtain_dataset(0, ds_key)
     print("Loaded dataset chunk:", index)
     for idx in range(start, stop):
         text = dataset[idx]["text"]
@@ -77,9 +77,9 @@ def process_chunk(start: int, stop: int, index: int):
     return result_csv
 
 
-def process_chunks_in_sequence(chunks, csv_file: str = "results.csv"):
+def process_chunks_in_sequence(chunks, csv_file: str = "results.csv", ds_key: str = None):
     for idx, (start, stop) in enumerate(tqdm.tqdm(chunks)):
-        csv = process_chunk(start, stop, idx)
+        csv = process_chunk(start, stop, idx, ds_key)
         if os.path.exists(csv_file):
             pd.DataFrame.from_dict(csv).to_csv(csv_file, mode='a', header=False)
         else:
@@ -96,11 +96,12 @@ def do_process_chunk(args):
 
 def process_chunks_in_parallel(chunks,
                                n_jobs: int = 2,
-                               sv_file: str = "./data/chunk{}_to_{}_results.csv"):
+                               sv_file: str = "./data/chunk{}_to_{}_results.csv",
+                               ds_key: str = None):
     parallel = Parallel(n_jobs=n_jobs, backend="threading")
     jobs = []
     for idx, (start, stop) in enumerate(tqdm.tqdm(chunks)):
-        job = (start, stop, idx, sv_file.format(start, stop))
+        job = (start, stop, idx, sv_file.format(start, stop), ds_key)
         jobs.append(job)
     files = parallel(delayed(do_process_chunk)(job) for job in tqdm.tqdm(jobs))
     return files
@@ -167,7 +168,8 @@ def main(n_samples: int = -1,
          sv_file: str = "./data/chunk{}_to_{}_results.csv",
          rank: int = 0,
          world_size: int = 1,
-         unify_chunks: bool = True):
+         unify_chunks: bool = True,
+         dataset: str = "c4_15M"):
 
     if rank != 0:
         rank = rank if os.environ["SLURM_PROCID"] is None else int(os.environ["SLURM_PROCID"])
@@ -194,7 +196,7 @@ def main(n_samples: int = -1,
         if os.path.exists(f"{rank}.done"):
             os.remove(f"{rank}.done")
         print("multiprocessing enabled")
-        files = process_chunks_in_parallel(chunks, n_jobs=multiprocessing, sv_file=sv_file)
+        files = process_chunks_in_parallel(chunks, n_jobs=multiprocessing, sv_file=sv_file, ds_key=dataset)
 
         if unify_chunks:
             wait_for_other_ranks_to_finish_if_necessary(rank=rank, world_size=world_size)
@@ -203,10 +205,10 @@ def main(n_samples: int = -1,
                 files = fetch_files(sv_file, chunk_size, n_samples)
             with open(f"{rank}.done", "w") as fp:
                 fp.write(str(timestamp()))
-            unify(savefiles=files)
+            unify(savefiles=files, template=sv_file)
     else:
         print("multiprocessing disabled")
-        process_chunks_in_sequence(chunks)
+        process_chunks_in_sequence(chunks, ds_key=dataset, csv_file=sv_file)
 
 
 
