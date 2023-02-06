@@ -98,7 +98,7 @@ def process_chunks_in_parallel(chunks,
 
 @click.command()
 @click.option('--n_samples', default=1000000, help="number of samples to process")
-@click.option('--chunk_size', default=1500000, help="size of a chunk processed by one worker")
+@click.option('--chunk_size', default=10000, help="size of a chunk processed by one worker")
 @click.option('--multiprocessing', default=2, help="number of processes, 0 is for sequential processing")
 @click.option('--sv_file', default="./data/chunk{}_to_{}_results.csv", help="format string with two slots for start and stop-sample for the respective chunk. Must be a valid path to a .csv-file if multiprocessing is enabled")
 @click.option('--rank', default=0, help="rank of the process in a multi-node setup")
