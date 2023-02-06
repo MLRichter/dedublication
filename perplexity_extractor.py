@@ -116,6 +116,8 @@ def main(n_samples: int,
         n_chunks_per_rank = len(chunks) // world_size
         start_chunk_idx, stop_chunk_idx = rank*n_chunks_per_rank, (rank+1)*n_chunks_per_rank
         chunks = chunks[start_chunk_idx:stop_chunk_idx]
+    else:
+        print("world size", world_size, "single node mode enabled")
     print("dataset has size:", size)
     print("will be processed in", len(chunks), "chunks")
     print("The chunks are:")
