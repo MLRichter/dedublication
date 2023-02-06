@@ -168,6 +168,9 @@ def main(n_samples: int = -1,
          world_size: int = 1,
          unify_chunks: bool = True):
 
+    if multiprocessing == 1 and world_size != 1:
+        raise ValueError("Sequential per node processes is not supported")
+
     n_samples = n_samples if n_samples != -1 else ds_size()
     chunks = split(n_samples, chunk_size)
     if world_size != 1:
