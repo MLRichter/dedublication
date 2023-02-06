@@ -124,40 +124,6 @@ def main():
         jobs.append((df, idx, "./duplicates", df1, df2))
     result = parallel(delayed(do_job)(x) for x in tqdm.tqdm(jobs))
     near_match, exact_match, found = tuple(sum(x) for x in zip(*result))
-    """
-        epsilon = 0.05
-        nearest_neighbours = filter_dataframe(df, idx, epsilon)
-        indices = nearest_neighbours.reset_index()["idx"].to_list()
-        if indices is None:
-            continue
-        if len(indices) > 1:
-            ds = obtain_dataset()
-            original = ds[idx]["text"]
-            print()
-            print("="*len(ds[idx]["text"]))
-            for i, idx in enumerate(indices):
-                duplicate = ds[idx]["text"]
-                print(f"{i}. ({idx})", duplicate)
-                print()
-                print()
-                if duplicate == original:
-                    exact_match += 1
-                else:
-                    near_match += 1
-            #print(ds[5])
-            #print(ds[227256])
-            print("="*len(ds[idx]["text"]))
-
-            print()
-            print()
-            print(len(indices), "duplicates found")
-            print("="*len(ds[idx]["text"]))
-            print("="*len(ds[idx]["text"]))
-            print("="*len(ds[idx]["text"]))
-            found += 1
-    """
-
-
     print("Near Matches:\t", near_match)
     print("Exact. Matches:\t", exact_match)
 

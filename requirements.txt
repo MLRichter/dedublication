@@ -1,0 +1,10 @@
+joblib
+numpy
+pandas
+tqdm
+datasets
+huggingface-hub
+sentencepiece
+faiss-gpu
+simhash-py
+kenlm
