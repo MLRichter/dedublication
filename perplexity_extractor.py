@@ -12,10 +12,13 @@ import pandas as pd
 DATASET = None
 MODELS = None
 
-def obtain_dataset(sample_start: int = 0, sample_end: int = None):
+dataset_mapper = {"c4_15M": lambda x: datasets.load_dataset('teven/c4_15M', "binary")["train"],
+                  "parquet": lambda x: datasets.load_dataset("parquet", data_dir=x)["train"]}
+
+def obtain_dataset(sample_start: int = 0, sample_end: int = None, dataset_key = "c4_15M"):
     global DATASET
     if DATASET is None:
-        ds = datasets.load_dataset('teven/c4_15M', "binary")["train"]
+        ds = dataset_mapper[dataset_key]
         DATASET = ds
     else:
         ds = DATASET
@@ -103,13 +106,13 @@ def process_chunks_in_parallel(chunks,
 @click.option('--sv_file', default="./data/chunk{}_to_{}_results.csv", help="format string with two slots for start and stop-sample for the respective chunk. Must be a valid path to a .csv-file if multiprocessing is enabled")
 @click.option('--rank', default=0, help="rank of the process in a multi-node setup")
 @click.option('--world_size', default=1, help="how often this script is executed in parallel")
-def main(n_samples: int,
+def main(n_samples: int = -1,
          chunk_size: int = 1500000,
          multiprocessing: int = 2,
          sv_file: str = "./data/chunk{}_to_{}_results.csv",
          rank: int = 0,
          world_size: int = 1):
-    size = ds_size()
+    n_samples = n_samples if n_samples != -1 else ds_size()
     chunks = split(n_samples, chunk_size)
     if world_size != 1:
         print("Executing script within a context of world size", world_size)
@@ -118,7 +121,7 @@ def main(n_samples: int,
         chunks = chunks[start_chunk_idx:stop_chunk_idx]
     else:
         print("world size", world_size, "single node mode enabled")
-    print("dataset has size:", size)
+    print("dataset has size:", n_samples)
     print("will be processed in", len(chunks), "chunks")
     print("The chunks are:")
     for i, chunk in enumerate(chunks):
