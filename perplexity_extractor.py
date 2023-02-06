@@ -144,6 +144,7 @@ def wait_for_other_ranks_to_finish_if_necessary(rank: int, world_size: int):
     else:
         wait_for_other_processes_to_finish(world_size)
 
+
 def fetch_files(savefile_template: str, chunk_size: int, n_samples: int):
     chunks = split(n_samples, chunk_size)
     filenames = []
@@ -157,7 +158,7 @@ def fetch_files(savefile_template: str, chunk_size: int, n_samples: int):
 @click.option('--chunk_size', default=10000, help="size of a chunk processed by one worker")
 @click.option('--multiprocessing', default=2, help="number of processes, 0 is for sequential processing")
 @click.option('--sv_file', default="./data/chunk{}_to_{}_results.csv", help="format string with two slots for start and stop-sample for the respective chunk. Must be a valid path to a .csv-file if multiprocessing is enabled")
-@click.option('--rank', default=0, help="rank of the process in a multi-node setup")
+@click.option('--rank', default=0, help="rank of the process in a multi-node setup, this will be overwritten by SLURM_PROCID if this environment variable exists")
 @click.option('--world_size', default=1, help="how often this script is executed in parallel")
 @click.option('--unify_chunks', default=True, helps="if chunking is enabled due to multiprocessing, the chunks will be unified in the main thread")
 def main(n_samples: int = -1,
@@ -167,6 +168,9 @@ def main(n_samples: int = -1,
          rank: int = 0,
          world_size: int = 1,
          unify_chunks: bool = True):
+
+    if rank != 0:
+        rank = rank if os.environ["SLURM_PROCID"] is None else int(os.environ["SLURM_PROCID"])
 
     if multiprocessing == 1 and world_size != 1:
         raise ValueError("Sequential per node processes is not supported")
@@ -191,14 +195,15 @@ def main(n_samples: int = -1,
             os.remove(f"{rank}.done")
         print("multiprocessing enabled")
         files = process_chunks_in_parallel(chunks, n_jobs=multiprocessing, sv_file=sv_file)
-        wait_for_other_ranks_to_finish_if_necessary(rank=rank, world_size=world_size)
 
-        if world_size != 1:
-            print("Fetching all files")
-            files = fetch_files(sv_file, chunk_size, n_samples)
-        with open(f"{rank}.done", "w") as fp:
-            fp.write(str(timestamp()))
-        unify(savefiles=files)
+        if unify_chunks:
+            wait_for_other_ranks_to_finish_if_necessary(rank=rank, world_size=world_size)
+            if world_size != 1:
+                print("Fetching all files")
+                files = fetch_files(sv_file, chunk_size, n_samples)
+            with open(f"{rank}.done", "w") as fp:
+                fp.write(str(timestamp()))
+            unify(savefiles=files)
     else:
         print("multiprocessing disabled")
         process_chunks_in_sequence(chunks)
