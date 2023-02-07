@@ -101,7 +101,7 @@ def process_chunks_in_parallel(chunks,
     parallel = Parallel(n_jobs=n_jobs, backend="threading")
     jobs = []
     for idx, (start, stop) in enumerate(tqdm.tqdm(chunks)):
-        job = (start, stop, idx, sv_file.format(start, stop), ds_key)
+        job = (start, stop, idx, ds_key, sv_file.format(start, stop))
         jobs.append(job)
     files = parallel(delayed(do_process_chunk)(job) for job in tqdm.tqdm(jobs))
     return files
