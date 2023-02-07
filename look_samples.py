@@ -1,6 +1,7 @@
 import os.path
 import timeit
 
+import click
 import datasets
 import pandas as pd
 import numpy as np
@@ -109,19 +110,18 @@ def make_job(df, idx: int, data_folder = "./duplicates", df1=None, df2=None):
 def do_job(args):
     return make_job(*args)
 
-
-def main():
-    found = 0
-    exact_match = 0
-    near_match = 0
-
-    df = pd.read_csv("results.csv", index_col="idx")
+@click.command()
+@click.option('--n_jobs', default=8, help="number of processes")
+@click.option('--csv_file', default="results.csv", help="source file containing perplexities")
+@click.option('--out_dir', default="results.csv", help="source file containing the results")
+def main(n_jobs: int = 8, csv_file: str = "results.csv", out_dir: str = "./duplicates"):
+    df = pd.read_csv(csv_file, index_col="idx")
     df1 = df.sort_values('perpl_ontocord/riverbed_kenlm').reset_index()
     df2 = df.sort_values('perpl_ccnet/wikipedia').reset_index()
-    parallel = Parallel(n_jobs=8)
+    parallel = Parallel(n_jobs=n_jobs)
     jobs = []
-    for idx in tqdm.tqdm(list(range(1000000))):
-        jobs.append((df, idx, "./duplicates", df1, df2))
+    for idx in tqdm.tqdm(df.index.values):
+        jobs.append((df, idx, out_dir, df1, df2))
     result = parallel(delayed(do_job)(x) for x in tqdm.tqdm(jobs))
     near_match, exact_match, found = tuple(sum(x) for x in zip(*result))
     print("Near Matches:\t", near_match)
