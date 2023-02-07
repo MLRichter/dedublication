@@ -12,15 +12,18 @@ from joblib import Parallel, delayed
 DATASET = None
 MODELS = None
 
-def obtain_dataset(sample_start: int = 0, sample_end: int = None):
+dataset_mapper = {"c4_15M": lambda: datasets.load_dataset('teven/c4_15M', "binary")["train"],
+                  "parquet1": lambda: datasets.load_dataset("parquet", data_files="../test/*.parquet")["train"]}
+
+def obtain_dataset(sample_start: int = 0, sample_end: int = None, dataset_key = "c4_15M"):
     global DATASET
+    print("Fetching dataset", dataset_key)
     if DATASET is None:
-        ds = datasets.load_dataset('teven/c4_15M', "binary", data_dir=r"./data/")["train"]
+        ds = dataset_mapper[dataset_key]()
         DATASET = ds
     else:
         ds = DATASET
     return ds
-
 def process():
     ...
 
@@ -69,7 +72,7 @@ def filter_dataframe_optimized(df, idx, epsilon=0.1, df1=None, df2=None):
     return filtered_df
 
 
-def make_job(df, idx: int, data_folder = "./duplicates", df1=None, df2=None):
+def make_job(df, idx: int, data_folder = "./duplicates", df1=None, df2=None, dataset_name: str = "parquet1"):
     found = 0
     exact_match = 0
     near_match = 0
@@ -84,7 +87,7 @@ def make_job(df, idx: int, data_folder = "./duplicates", df1=None, df2=None):
     orig_idx = idx
 
     if len(indices) > 1:
-        ds = obtain_dataset()
+        ds = obtain_dataset(dataset_key=dataset_name)
         real = ds[idx]["text"]
         original = ds[idx]["text"] + "\n" + ("=" * len(ds[idx]["text"]))
         for i, idx in enumerate(indices):
@@ -114,14 +117,15 @@ def do_job(args):
 @click.option('--n_jobs', default=8, help="number of processes")
 @click.option('--csv_file', default="results.csv", help="source file containing perplexities")
 @click.option('--out_dir', default="results.csv", help="source file containing the results")
-def main(n_jobs: int = 8, csv_file: str = "results.csv", out_dir: str = "./duplicates"):
+@click.option('--dataset_name', default="parquet1", help="source file containing the results")
+def main(n_jobs: int = 8, csv_file: str = "results.csv", out_dir: str = "./duplicates", dataset_name: str = "parquet1"):
     df = pd.read_csv(csv_file, index_col="idx")
     df1 = df.sort_values('perpl_ontocord/riverbed_kenlm').reset_index()
     df2 = df.sort_values('perpl_ccnet/wikipedia').reset_index()
     parallel = Parallel(n_jobs=n_jobs)
     jobs = []
     for idx in tqdm.tqdm(df.index.values):
-        jobs.append((df, idx, out_dir, df1, df2))
+        jobs.append((df, idx, out_dir, df1, df2, dataset_name))
     result = parallel(delayed(do_job)(x) for x in tqdm.tqdm(jobs))
     near_match, exact_match, found = tuple(sum(x) for x in zip(*result))
     print("Near Matches:\t", near_match)
