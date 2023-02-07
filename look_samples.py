@@ -125,6 +125,7 @@ def main(n_jobs: int = 8, csv_file: str = "results.csv", out_dir: str = "./dupli
     parallel = Parallel(n_jobs=n_jobs)
     jobs = []
     for idx in tqdm.tqdm(df.index.values):
+        idx = int(idx)
         jobs.append((df, idx, out_dir, df1, df2, dataset_name))
     result = parallel(delayed(do_job)(x) for x in tqdm.tqdm(jobs))
     near_match, exact_match, found = tuple(sum(x) for x in zip(*result))
