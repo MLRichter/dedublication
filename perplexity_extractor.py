@@ -82,7 +82,7 @@ def process_chunks_in_sequence(chunks,
                                ds_key: str = None,
                                rank: int = 0):
     files = []
-    for idx, (start, stop) in enumerate(tqdm.tqdm(chunks, desc=f"rank: {rank} chunk {idx}")):
+    for idx, (start, stop) in enumerate(tqdm.tqdm(chunks, desc=f"rank: {rank}")):
         job = (start, stop, idx, ds_key, sv_file.format(start, stop))
         file = do_process_chunk(job)
         files.append(file)
