@@ -16,13 +16,13 @@ import pandas as pd
 DATASET = None
 MODELS = None
 
-dataset_mapper = {"c4_15M": lambda x: datasets.load_dataset('teven/c4_15M', "binary")["train"],
-                  "parquet": lambda x: datasets.load_dataset("parquet", data_dir=x)["train"]}
+dataset_mapper = {"c4_15M": lambda: datasets.load_dataset('teven/c4_15M', "binary")["train"],
+                  "parquet1": lambda: datasets.load_dataset("parquet", data_dir="../test/*.parquet")["train"]}
 
 def obtain_dataset(sample_start: int = 0, sample_end: int = None, dataset_key = "c4_15M"):
     global DATASET
     if DATASET is None:
-        ds = dataset_mapper[dataset_key]
+        ds = dataset_mapper[dataset_key]()
         DATASET = ds
     else:
         ds = DATASET
