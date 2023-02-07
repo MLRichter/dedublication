@@ -98,7 +98,7 @@ def process_chunks_in_parallel(chunks,
                                n_jobs: int = 2,
                                sv_file: str = "./data/chunk{}_to_{}_results.csv",
                                ds_key: str = None):
-    parallel = Parallel(n_jobs=n_jobs)
+    parallel = Parallel(n_jobs=n_jobs, backend="multiprocessing")
     jobs = []
     for idx, (start, stop) in enumerate(tqdm.tqdm(chunks)):
         job = (start, stop, idx, ds_key, sv_file.format(start, stop))
