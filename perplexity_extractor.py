@@ -145,7 +145,7 @@ def wait_for_other_processes_to_finish(world_size: int, max_wait_periods = 60):
             sleep(60)
 
 def wait_for_other_ranks_to_finish_if_necessary(rank: int, world_size: int):
-    if rank != 0 or world_size != 1:
+    if rank != 0 or world_size == 1:
         print("Rank", rank, "World_Size", world_size, "therefore no waiting necessary")
         return
     else:
@@ -215,9 +215,10 @@ def main(n_samples: int = -1,
         if world_size != 1:
             print("Fetching all files")
             files = fetch_files(sv_file, chunk_size, n_samples)
-        with open(f"{rank}.done", "w") as fp:
+        with open(f"{rank}.done", "w"):
             pass
-        unify(savefiles=files, template=sv_file)
+        if rank == 0:
+            unify(savefiles=files, template=sv_file)
 
 
 
