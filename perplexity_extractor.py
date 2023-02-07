@@ -77,13 +77,16 @@ def process_chunk(start: int, stop: int, index: int, ds_key: str):
     return result_csv
 
 
-def process_chunks_in_sequence(chunks, csv_file: str = "results.csv", ds_key: str = None):
-    for idx, (start, stop) in enumerate(tqdm.tqdm(chunks)):
-        csv = process_chunk(start, stop, idx, ds_key)
-        if os.path.exists(csv_file):
-            pd.DataFrame.from_dict(csv).to_csv(csv_file, mode='a', header=False)
-        else:
-            pd.DataFrame.from_dict(csv).to_csv(csv_file)
+def process_chunks_in_sequence(chunks,
+                               sv_file: str = "./data/chunk{}_to_{}_results.csv",
+                               ds_key: str = None,
+                               rank: int = 0):
+    files = []
+    for idx, (start, stop) in enumerate(tqdm.tqdm(chunks, desc=f"rank: {rank} chunk {idx}")):
+        job = (start, stop, idx, ds_key, sv_file.format(start, stop))
+        file = do_process_chunk(job)
+        files.append(file)
+    return files
 
 
 def do_process_chunk(args):
@@ -193,23 +196,23 @@ def main(n_samples: int = -1,
     for i, chunk in enumerate(chunks):
         print(f"\t({i})", chunk[0], ":", chunk[1])
 
-    if multiprocessing:
-        if os.path.exists(f"{rank}.done"):
-            os.remove(f"{rank}.done")
+    if os.path.exists(f"{rank}.done"):
+        os.remove(f"{rank}.done")
+    if multiprocessing != 1:
         print("multiprocessing enabled")
         files = process_chunks_in_parallel(chunks, n_jobs=multiprocessing, sv_file=sv_file, ds_key=dataset)
-
-        if unify_chunks:
-            wait_for_other_ranks_to_finish_if_necessary(rank=rank, world_size=world_size)
-            if world_size != 1:
-                print("Fetching all files")
-                files = fetch_files(sv_file, chunk_size, n_samples)
-            with open(f"{rank}.done", "w") as fp:
-                pass
-            unify(savefiles=files, template=sv_file)
     else:
         print("multiprocessing disabled")
-        process_chunks_in_sequence(chunks, ds_key=dataset, csv_file=sv_file)
+        files = process_chunks_in_sequence(chunks, sv_file=sv_file, ds_key=dataset, rank=rank)
+
+    if unify_chunks:
+        wait_for_other_ranks_to_finish_if_necessary(rank=rank, world_size=world_size)
+        if world_size != 1:
+            print("Fetching all files")
+            files = fetch_files(sv_file, chunk_size, n_samples)
+        with open(f"{rank}.done", "w") as fp:
+            pass
+        unify(savefiles=files, template=sv_file)
 
 
 
