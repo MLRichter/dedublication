@@ -50,6 +50,9 @@ def obtain_perplexity(models: dict, text: str) -> Dict[str, int]:
 def split(length, chunk_size):
     indices = list(range(0, length, chunk_size))
     start_stop = [(start, stop) for start, stop in zip(indices[:-1], indices[1:])]
+    last_stop = start_stop[-1][-1]
+    if last_stop < length:
+        start_stop.append((last_stop, length))
     return start_stop
 
 
@@ -185,7 +188,11 @@ def main(n_samples: int = -1,
         print("Executing script within a context of world size", world_size)
         n_chunks_per_rank = len(chunks) // world_size
         start_chunk_idx, stop_chunk_idx = rank*n_chunks_per_rank, (rank+1)*n_chunks_per_rank
-        chunks = chunks[start_chunk_idx:stop_chunk_idx]
+        hangovers = len(chunks)%world_size
+        newchunks = chunks[start_chunk_idx:stop_chunk_idx]
+        if hangovers != 0 and rank < hangovers:
+            lefover = chunks[-1*(rank+1)]
+            newchunks.append(lefover)
     else:
         print("world size", world_size, "single node mode enabled")
     print("dataset has size:", n_samples)
