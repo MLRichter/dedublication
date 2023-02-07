@@ -211,12 +211,12 @@ def main(n_samples: int = -1,
         files = process_chunks_in_sequence(chunks, sv_file=sv_file, ds_key=dataset, rank=rank)
 
     if unify_chunks:
+        with open(f"{rank}.done", "w"):
+            pass
         wait_for_other_ranks_to_finish_if_necessary(rank=rank, world_size=world_size)
         if world_size != 1:
             print("Fetching all files")
             files = fetch_files(sv_file, chunk_size, n_samples)
-        with open(f"{rank}.done", "w"):
-            pass
         if rank == 0:
             unify(savefiles=files, template=sv_file)
 
