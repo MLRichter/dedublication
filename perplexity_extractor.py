@@ -8,7 +8,6 @@ import datasets
 import tqdm
 from datasets.packaged_modules.pandas import pandas
 from joblib import Parallel, delayed
-from pyarrow.types import timestamp
 
 from riverbed.kenlm_manager import *
 import pandas as pd
@@ -204,7 +203,7 @@ def main(n_samples: int = -1,
                 print("Fetching all files")
                 files = fetch_files(sv_file, chunk_size, n_samples)
             with open(f"{rank}.done", "w") as fp:
-                fp.write(str(timestamp()))
+                pass
             unify(savefiles=files, template=sv_file)
     else:
         print("multiprocessing disabled")
