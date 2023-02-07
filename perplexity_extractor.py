@@ -193,6 +193,7 @@ def main(n_samples: int = -1,
         if hangovers != 0 and rank < hangovers:
             lefover = chunks[-1*(rank+1)]
             newchunks.append(lefover)
+        chunks = newchunks
     else:
         print("world size", world_size, "single node mode enabled")
     print("dataset has size:", n_samples)
