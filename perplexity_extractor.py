@@ -177,6 +177,7 @@ def main(n_samples: int = -1,
 
     if rank != 0:
         rank = rank if os.environ["SLURM_PROCID"] is None else int(os.environ["SLURM_PROCID"])
+    print(f"Rank {rank}: booting up")
 
     n_samples = n_samples if n_samples != -1 else ds_size(dataset_key=dataset) + 1
     chunks = split(n_samples, chunk_size)
