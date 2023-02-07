@@ -160,8 +160,8 @@ def fetch_files(savefile_template: str, chunk_size: int, n_samples: int):
 @click.option('--sv_file', default="./data/chunk{}_to_{}_results.csv", help="format string with two slots for start and stop-sample for the respective chunk. Must be a valid path to a .csv-file if multiprocessing is enabled")
 @click.option('--rank', default=0, help="rank of the process in a multi-node setup, this will be overwritten by SLURM_PROCID if this environment variable exists")
 @click.option('--world_size', default=1, help="how often this script is executed in parallel")
-@click.option('--unify_chunks', default=True, helps="if chunking is enabled due to multiprocessing, the chunks will be unified in the main thread")
-@click.option('--dataset', default="c4_15M", helps="if chunking is enabled due to multiprocessing, the chunks will be unified in the main thread")
+@click.option('--unify_chunks', default=True, help="if chunking is enabled due to multiprocessing, the chunks will be unified in the main thread")
+@click.option('--dataset', default="c4_15M", help="if chunking is enabled due to multiprocessing, the chunks will be unified in the main thread")
 def main(n_samples: int = -1,
          chunk_size: int = 1500000,
          multiprocessing: int = 2,
