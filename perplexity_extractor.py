@@ -67,7 +67,7 @@ def process_chunk(start: int, stop: int, index: int, ds_key: str):
     models = get_model_dict()
     result_csv = {f"perpl_{model}": [] for model in models.keys()}
     result_csv["idx"] = []
-    dataset = obtain_dataset(0, ds_key)
+    dataset = obtain_dataset(0, dataset_key=ds_key)
     print("Loaded dataset chunk:", index)
     for idx in range(start, stop):
         text = dataset[idx]["text"]
