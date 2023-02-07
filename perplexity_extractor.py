@@ -178,7 +178,7 @@ def main(n_samples: int = -1,
     if multiprocessing == 1 and world_size != 1:
         raise ValueError("Sequential per node processes is not supported")
 
-    n_samples = n_samples if n_samples != -1 else ds_size() + 1
+    n_samples = n_samples if n_samples != -1 else ds_size(dataset_key=dataset) + 1
     chunks = split(n_samples, chunk_size)
     if world_size != 1:
         print("Executing script within a context of world size", world_size)
