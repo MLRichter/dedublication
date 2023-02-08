@@ -93,24 +93,24 @@ def make_job(df, idx: int, data_folder = "./duplicates", df1=None, df2=None, dat
     orig_idx = idx
 
     if len(indices) > 1:
-        ds = obtain_dataset(dataset_key=dataset_name)
-        real = ds[idx]["text"]
-        original = ds[idx]["text"] + "\n" + ("=" * len(ds[idx]["text"]))
-        for i, idx in enumerate(indices):
-            duplicate = ds[idx]["text"]
-            original = original + f"{i}. ({idx}) " + duplicate + ("\n"*3)
-            if duplicate == real:
-                if idx != orig_idx:
-                    exact_match += 1
-            else:
-                near_match += 1
+        #ds = obtain_dataset(dataset_key=dataset_name)
+        #real = ds[idx]["text"]
+        #original = ds[idx]["text"] + "\n" + ("=" * len(ds[idx]["text"]))
+        #for i, idx in enumerate(indices):
+        #    duplicate = ds[idx]["text"]
+        #    original = original + f"{i}. ({idx}) " + duplicate + ("\n"*3)
+        #    if duplicate == real:
+        #        if idx != orig_idx:
+        #            exact_match += 1
+        #    else:
+        #        near_match += 1
         # print(ds[5])
         # print(ds[227256])
-        original += "=" * len(ds[idx]["text"]) + "\n"
-        original += f"{len(indices)} +  duplicates found"
+        #original += "=" * len(ds[idx]["text"]) + "\n"
+        #original += f"{len(indices)} +  duplicates found"
         #found += 1
-        with open(os.path.join(data_folder, f"{idx}_found{found}_near{near_match}_exact{exact_match}.txt"), "w") as fp:
-            fp.write(original)
+        #with open(os.path.join(data_folder, f"{idx}_found{found}_near{near_match}_exact{exact_match}.txt"), "w") as fp:
+        #    fp.write(original)
         return indices
 
 
@@ -140,7 +140,7 @@ def do_process_chunk(args):
 @click.option('--csv_file', default="results.csv", help="source file containing perplexities")
 @click.option('--out_dir', default="results.csv", help="source file containing the results")
 @click.option('--dataset_name', default="parquet1", help="source file containing the results")
-@click.option('--world_size', default=1, help="source file containing the results")
+@click.option('--world_size', default=1, help="number of nodes, working on the same problem")
 def main(n_jobs: int = 8, csv_file: str = "results.csv", out_dir: str = "./duplicates", dataset_name: str = "parquet1", world_size: int = 1):
     df = pd.read_csv(csv_file, index_col="idx")
     df1 = df.sort_values('perpl_ontocord/riverbed_kenlm').reset_index()
@@ -164,9 +164,11 @@ def main(n_jobs: int = 8, csv_file: str = "results.csv", out_dir: str = "./dupli
     for i, idx in enumerate(tqdm.tqdm(idxs, "Building Indices")):
         jobs.append((idx, df, df1, df2, out_dir, dataset_name, i))
     result = parallel(delayed(do_process_chunk)(x) for x in tqdm.tqdm(jobs, "Processing samples"))
-    json_result = {int(idx): [int(d) for d in duplicates] for idx, duplicates in zip(df.index.to_list(), result)}
-    with open(f"duplicates_{dataset_name}_{rank}.json", "w") as fp:
-        json.dump(json_result, fp)
+    flattened_results = []
+    for chunk_result in tqdm.tqdm(result, "concatenating chunks"):
+        flattened_results.extend(chunk_result)
+    with open(os.path.join(out_dir, f"duplicates_{dataset_name}_{rank}.json"), "w") as fp:
+        json.dump(flattened_results, fp)
 
 
 
