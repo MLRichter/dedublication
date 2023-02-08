@@ -118,6 +118,7 @@ def make_job(df, idx: int, data_folder = "./duplicates", df1=None, df2=None, dat
 
 def do_job(args):
     return make_job(*args)
+
 def process_chunk(idxs: List[int], df: pd.DataFrame, df1: pd.DataFrame, df2: pd. DataFrame, out_dir: str, dataset_name: str, rank: int):
     results = []
     for idx in tqdm.tqdm(idxs, f"rank {rank} processing"):
@@ -125,6 +126,9 @@ def process_chunk(idxs: List[int], df: pd.DataFrame, df1: pd.DataFrame, df2: pd.
         result = make_job(df, idx, out_dir, df1, df2, dataset_name)
         results.append(result)
     return results
+
+def do_process_chunk(args):
+    return process_chunk(*args)
 
 @click.command()
 @click.option('--n_jobs', default=8, help="number of processes")
