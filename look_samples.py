@@ -129,7 +129,7 @@ def main(n_jobs: int = 8, csv_file: str = "results.csv", out_dir: str = "./dupli
     for idx in tqdm.tqdm(df.index.values, "Building Indices"):
         idx = int(idx)
         jobs.append((df, idx, out_dir, df1, df2, dataset_name))
-    result = parallel(delayed(do_job)(x) for x in tqdm.tqdm(jobs, "Fetching"))
+    result = parallel(delayed(do_job)(x) for x in tqdm.tqdm(jobs, "Processing samples"))
     json_result = {int(idx): [int(d) for d in duplicates] for idx, duplicates in zip(df.index.to_list(), result)}
     with open(f"duplicates_{dataset_name}.json", "w") as fp:
         json.dump(json_result, fp)
