@@ -1,5 +1,6 @@
 import json
 import os.path
+import time
 import timeit
 from typing import List
 
@@ -121,12 +122,14 @@ def do_job(args):
 
 def process_chunk(idxs: List[int], df: pd.DataFrame, df1: pd.DataFrame, df2: pd. DataFrame, out_dir: str, dataset_name: str, rank: int):
     results = []
+    start = time.time()
     for i, idx in enumerate(idxs):
         idx = int(idx)
         result = make_job(df, idx, out_dir, df1, df2, dataset_name)
         results.append(result)
         if i%10000 == 0:
-            print("rank", rank, "processed", i, "samples")
+            current = time.time()
+            print("rank", rank, "processed", i, "(", round(i/(current-start)), "samples / s)")
     return results
 
 def do_process_chunk(args):
