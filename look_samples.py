@@ -1,3 +1,4 @@
+import json
 import os.path
 import timeit
 
@@ -24,6 +25,7 @@ def obtain_dataset(sample_start: int = 0, sample_end: int = None, dataset_key = 
     else:
         ds = DATASET
     return ds
+
 def process():
     ...
 
@@ -87,25 +89,25 @@ def make_job(df, idx: int, data_folder = "./duplicates", df1=None, df2=None, dat
     orig_idx = idx
 
     if len(indices) > 1:
-        ds = obtain_dataset(dataset_key=dataset_name)
-        real = ds[idx]["text"]
-        original = ds[idx]["text"] + "\n" + ("=" * len(ds[idx]["text"]))
-        for i, idx in enumerate(indices):
-            duplicate = ds[idx]["text"]
-            original = original + f"{i}. ({idx}) " + duplicate + ("\n"*3)
-            if duplicate == real:
-                if idx != orig_idx:
-                    exact_match += 1
-
-            else:
-                near_match += 1
+        return indices
+        #ds = obtain_dataset(dataset_key=dataset_name)
+        #real = ds[idx]["text"]
+        #original = ds[idx]["text"] + "\n" + ("=" * len(ds[idx]["text"]))
+        #for i, idx in enumerate(indices):
+        ##    duplicate = ds[idx]["text"]
+        #    original = original + f"{i}. ({idx}) " + duplicate + ("\n"*3)
+        #    if duplicate == real:
+        #        if idx != orig_idx:
+        #            exact_match += 1
+        #    else:
+        #        near_match += 1
         # print(ds[5])
         # print(ds[227256])
-        original += "=" * len(ds[idx]["text"]) + "\n"
-        original += f"{len(indices)} +  duplicates found"
-        found += 1
-        with open(os.path.join(data_folder, f"{idx}_found{found}_near{near_match}_exact{exact_match}.txt"), "w") as fp:
-            fp.write(original)
+        #original += "=" * len(ds[idx]["text"]) + "\n"
+        #original += f"{len(indices)} +  duplicates found"
+        #found += 1
+        #with open(os.path.join(data_folder, f"{idx}_found{found}_near{near_match}_exact{exact_match}.txt"), "w") as fp:
+        #    fp.write(original)
 
     return near_match, exact_match, found
 
@@ -124,13 +126,13 @@ def main(n_jobs: int = 8, csv_file: str = "results.csv", out_dir: str = "./dupli
     df2 = df.sort_values('perpl_ccnet/wikipedia').reset_index()
     parallel = Parallel(n_jobs=n_jobs)
     jobs = []
-    for idx in tqdm.tqdm(df.index.values):
+    for idx in tqdm.tqdm(df.index.values, "Building Indices"):
         idx = int(idx)
         jobs.append((df, idx, out_dir, df1, df2, dataset_name))
-    result = parallel(delayed(do_job)(x) for x in tqdm.tqdm(jobs))
-    near_match, exact_match, found = tuple(sum(x) for x in zip(*result))
-    print("Near Matches:\t", near_match)
-    print("Exact. Matches:\t", exact_match)
+    result = parallel(delayed(do_job)(x) for x in tqdm.tqdm(jobs, "Fetching"))
+    json_result = {int(idx): [int(d) for d in duplicates] for idx, duplicates in zip(df.index.to_list(), result)}
+    with open(f"duplicates_{dataset_name}.json", "w") as fp:
+        json.dump(json_result, fp)
 
 
 
