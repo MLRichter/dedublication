@@ -121,10 +121,12 @@ def do_job(args):
 
 def process_chunk(idxs: List[int], df: pd.DataFrame, df1: pd.DataFrame, df2: pd. DataFrame, out_dir: str, dataset_name: str, rank: int):
     results = []
-    for idx in tqdm.tqdm(idxs, f"rank {rank} processing"):
+    for i, idx in enumerate(idxs):
         idx = int(idx)
         result = make_job(df, idx, out_dir, df1, df2, dataset_name)
         results.append(result)
+        if i%10000 == 0:
+            print("rank", rank, "processed", i, "samples")
     return results
 
 def do_process_chunk(args):
