@@ -83,7 +83,7 @@ def make_job(df, idx: int, data_folder = "./duplicates", df1=None, df2=None, dat
     #nn2 = filter_dataframe_optimized(df, idx, epsilon)
     #assert (nearest_neighbours.sort_index() == nn2.sort_index()).all().all()
     if nearest_neighbours is None:
-        return (0, 0, 0)
+        return []
     indices = nearest_neighbours.reset_index()["idx"].to_list()
     original = ""
     orig_idx = idx
@@ -109,7 +109,7 @@ def make_job(df, idx: int, data_folder = "./duplicates", df1=None, df2=None, dat
         #with open(os.path.join(data_folder, f"{idx}_found{found}_near{near_match}_exact{exact_match}.txt"), "w") as fp:
         #    fp.write(original)
 
-    return near_match, exact_match, found
+    return []
 
 
 def do_job(args):
