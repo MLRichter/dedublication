@@ -153,7 +153,7 @@ def main(n_jobs: int = 8, csv_file: str = "results.csv", out_dir: str = "./dupli
     start = num_chunks * rank
     stop = num_chunks * (rank+1) if not (rank+1) == world_size else num_chunks
     print("rank", rank, "processes chunks with chunk index", start, "to", stop, "of total", len(idxs), "chunks processed by world size", world_size)
-
+    idxs = idxs[start:stop]
 
     jobs = []
     for i, idx in enumerate(tqdm.tqdm(idxs, "Building Indices")):
