@@ -30,9 +30,6 @@ def obtain_dataset(sample_start: int = 0, sample_end: int = None, dataset_key = 
         ds = DATASET
     return ds
 
-def process():
-    ...
-
 import pandas as pd
 
 def filter_dataframe(df, idx, epsilon=0.1):
