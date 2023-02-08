@@ -1,6 +1,7 @@
 import json
 import os.path
 import timeit
+from typing import List
 
 import click
 import datasets
@@ -9,6 +10,8 @@ import numpy as np
 import pandas as pd
 import tqdm
 from joblib import Parallel, delayed
+
+from perplexity_extractor import split
 
 DATASET = None
 MODELS = None
@@ -89,31 +92,39 @@ def make_job(df, idx: int, data_folder = "./duplicates", df1=None, df2=None, dat
     orig_idx = idx
 
     if len(indices) > 1:
-        return indices
-        #ds = obtain_dataset(dataset_key=dataset_name)
-        #real = ds[idx]["text"]
-        #original = ds[idx]["text"] + "\n" + ("=" * len(ds[idx]["text"]))
-        #for i, idx in enumerate(indices):
-        ##    duplicate = ds[idx]["text"]
-        #    original = original + f"{i}. ({idx}) " + duplicate + ("\n"*3)
-        #    if duplicate == real:
-        #        if idx != orig_idx:
-        #            exact_match += 1
-        #    else:
-        #        near_match += 1
+        ds = obtain_dataset(dataset_key=dataset_name)
+        real = ds[idx]["text"]
+        original = ds[idx]["text"] + "\n" + ("=" * len(ds[idx]["text"]))
+        for i, idx in enumerate(indices):
+            duplicate = ds[idx]["text"]
+            original = original + f"{i}. ({idx}) " + duplicate + ("\n"*3)
+            if duplicate == real:
+                if idx != orig_idx:
+                    exact_match += 1
+            else:
+                near_match += 1
         # print(ds[5])
         # print(ds[227256])
-        #original += "=" * len(ds[idx]["text"]) + "\n"
-        #original += f"{len(indices)} +  duplicates found"
+        original += "=" * len(ds[idx]["text"]) + "\n"
+        original += f"{len(indices)} +  duplicates found"
         #found += 1
-        #with open(os.path.join(data_folder, f"{idx}_found{found}_near{near_match}_exact{exact_match}.txt"), "w") as fp:
-        #    fp.write(original)
+        with open(os.path.join(data_folder, f"{idx}_found{found}_near{near_match}_exact{exact_match}.txt"), "w") as fp:
+            fp.write(original)
+        return indices
+
 
     return []
 
 
 def do_job(args):
     return make_job(*args)
+def process_chunk(idxs: List[int], df: pd.DataFrame, df1: pd.DataFrame, df2: pd. DataFrame, out_dir: str, dataset_name: str, rank: int):
+    results = []
+    for idx in tqdm.tqdm(idxs, f"rank {rank} processing"):
+        idx = int(idx)
+        result = make_job(df, idx, out_dir, df1, df2, dataset_name)
+        results.append(result)
+    return results
 
 @click.command()
 @click.option('--n_jobs', default=8, help="number of processes")
@@ -124,12 +135,22 @@ def main(n_jobs: int = 8, csv_file: str = "results.csv", out_dir: str = "./dupli
     df = pd.read_csv(csv_file, index_col="idx")
     df1 = df.sort_values('perpl_ontocord/riverbed_kenlm').reset_index()
     df2 = df.sort_values('perpl_ccnet/wikipedia').reset_index()
+
+
+
     parallel = Parallel(n_jobs=n_jobs)
     jobs = []
     for idx in tqdm.tqdm(df.index.values, "Building Indices"):
         idx = int(idx)
-        jobs.append((df, idx, out_dir, df1, df2, dataset_name))
-    result = parallel(delayed(do_job)(x) for x in tqdm.tqdm(jobs, "Processing samples"))
+        jobs.append(idx)
+
+    idxs: List[List[int]] = np.split(df.index.values, list(
+        range(0, len(df), (len(df)//n_jobs)))
+                    )[1:]
+
+    for i, idx in enumerate(tqdm.tqdm(idxs, "Building Indices")):
+        jobs.append((idx, df, df1, df2, out_dir, dataset_name, i))
+    result = parallel(delayed(process_chunk)(x) for x in tqdm.tqdm(jobs, "Processing samples"))
     json_result = {int(idx): [int(d) for d in duplicates] for idx, duplicates in zip(df.index.to_list(), result)}
     with open(f"duplicates_{dataset_name}.json", "w") as fp:
         json.dump(json_result, fp)
