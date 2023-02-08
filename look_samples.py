@@ -135,18 +135,26 @@ def do_process_chunk(args):
 @click.option('--csv_file', default="results.csv", help="source file containing perplexities")
 @click.option('--out_dir', default="results.csv", help="source file containing the results")
 @click.option('--dataset_name', default="parquet1", help="source file containing the results")
-def main(n_jobs: int = 8, csv_file: str = "results.csv", out_dir: str = "./duplicates", dataset_name: str = "parquet1"):
+@click.option('--world_size', default=1, help="source file containing the results")
+def main(n_jobs: int = 8, csv_file: str = "results.csv", out_dir: str = "./duplicates", dataset_name: str = "parquet1", world_size: int = 1):
     df = pd.read_csv(csv_file, index_col="idx")
     df1 = df.sort_values('perpl_ontocord/riverbed_kenlm').reset_index()
     df2 = df.sort_values('perpl_ccnet/wikipedia').reset_index()
 
-
+    rank = int(os.environ["SLURM_PROCID"])
 
     parallel = Parallel(n_jobs=n_jobs)
 
     idxs: List[List[int]] = np.split(df.index.values, list(
-        range(0, len(df), (len(df)//n_jobs)))
+        range(0, len(df), (len(df)//(n_jobs*world_size))))
                     )[1:]
+
+    num_chunks = len(idxs) // world_size
+    start = num_chunks * rank
+    stop = num_chunks * (rank+1) if not (rank+1) == world_size else num_chunks
+    print("rank", rank, "processes chunks with chunk index", start, "to", stop, "of total", len(idxs), "chunks processed by world size", world_size)
+
+
     jobs = []
     for i, idx in enumerate(tqdm.tqdm(idxs, "Building Indices")):
         jobs.append((idx, df, df1, df2, out_dir, dataset_name, i))
