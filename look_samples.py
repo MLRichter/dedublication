@@ -143,18 +143,14 @@ def main(n_jobs: int = 8, csv_file: str = "results.csv", out_dir: str = "./dupli
 
 
     parallel = Parallel(n_jobs=n_jobs)
-    jobs = []
-    for idx in tqdm.tqdm(df.index.values, "Building Indices"):
-        idx = int(idx)
-        jobs.append(idx)
 
     idxs: List[List[int]] = np.split(df.index.values, list(
         range(0, len(df), (len(df)//n_jobs)))
                     )[1:]
-
+    jobs = []
     for i, idx in enumerate(tqdm.tqdm(idxs, "Building Indices")):
         jobs.append((idx, df, df1, df2, out_dir, dataset_name, i))
-    result = parallel(delayed(process_chunk)(x) for x in tqdm.tqdm(jobs, "Processing samples"))
+    result = parallel(delayed(do_process_chunk)(x) for x in tqdm.tqdm(jobs, "Processing samples"))
     json_result = {int(idx): [int(d) for d in duplicates] for idx, duplicates in zip(df.index.to_list(), result)}
     with open(f"duplicates_{dataset_name}.json", "w") as fp:
         json.dump(json_result, fp)
