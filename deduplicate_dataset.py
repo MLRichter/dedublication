@@ -30,19 +30,20 @@ def get_dataset_indices(dataset):
     return list(range(len(dataset)))
 
 
-def keep_first(duplicate_instace: frozenset[int]):
+def keep_first(duplicate_instace: frozenset[int], all_to_keep: Set[int]):
     #if len(duplicate_instace) == 0:
     #    return duplicate_instace
-    try:
-        removed = set(duplicate_instace)
-        removed.pop()
-        result = frozenset(removed)
-    except KeyError:
-        return duplicate_instace
-    return result
+    if len(duplicate_instace) != 0 and len(all_to_keep.intersection(duplicate_instace)) == 0:
+        to_remove = set(duplicate_instace)
+        to_keep = to_remove.pop()
+        all_to_keep.add(to_keep)
+        return all_to_keep
+    else:
+        return all_to_keep
 
 
-def drop_all(duplicate_instace: frozenset[int]):
+
+def drop_all(duplicate_instace: frozenset[int], all_to_remove: Set[int]):
     return duplicate_instace
 
 
@@ -53,6 +54,7 @@ REMOVAL_STRATEGY = {
 
 
 def remove_duplicates(duplicates: Set[Set[int]], dataset_indices: List[int], removal_strategy: str):
+
     processed_duplicates = [REMOVAL_STRATEGY[removal_strategy](duplicate) for duplicate in duplicates]
     all_indices_to_remove = set()
     for removal_chunk in processed_duplicates:
