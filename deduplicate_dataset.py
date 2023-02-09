@@ -15,14 +15,14 @@ def fetch_paths(path: str) -> List[str]:
     return files
 
 
-def load_duplicate_info(path: str) -> Set[Set[int]]:
+def load_duplicate_info(path: str) -> Set[frozenset[int]]:
     paths = fetch_paths(path)
     all_duplicates = set()
     for file in tqdm(paths, "loading chunks"):
         with open(file, "r") as fp:
             duplicates_from_one_file = json.load(fp)
             for duplicates in duplicates_from_one_file:
-                all_duplicates.add(set(duplicates))
+                all_duplicates.add(frozenset(duplicates))
     return all_duplicates
 
 
