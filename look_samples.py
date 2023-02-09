@@ -164,6 +164,7 @@ def main(n_jobs: int = 8, csv_file: str = "results.csv", out_dir: str = "./dupli
     flattened_results = []
     for chunk_result in tqdm.tqdm(result, "concatenating chunks"):
         flattened_results.extend(chunk_result)
+    flattened_results = [fr for fr in flattened_results if len(fr) != 0]
     with open(os.path.join(out_dir, f"duplicates_{dataset_name}_{rank}.json"), "w") as fp:
         json.dump(flattened_results, fp)
 

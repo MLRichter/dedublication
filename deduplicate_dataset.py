@@ -31,6 +31,8 @@ def get_dataset_indices(dataset):
 
 
 def keep_first(duplicate_instace: Set[int]):
+    if len(duplicate_instace) == 0:
+        return duplicate_instace
     try:
         duplicate_instace.pop()
     except KeyError:
