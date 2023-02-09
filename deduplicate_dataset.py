@@ -30,17 +30,17 @@ def get_dataset_indices(dataset):
     return list(range(len(dataset)))
 
 
-def keep_first(duplicate_instace: Set[int]):
+def keep_first(duplicate_instace: frozenset[int]):
     if len(duplicate_instace) == 0:
         return duplicate_instace
     try:
-        duplicate_instace.pop()
+        removed = frozenset(set(duplicate_instace)).pop()
     except KeyError:
         return duplicate_instace
-    return duplicate_instace
+    return removed
 
 
-def drop_all(duplicate_instace: Set[int]):
+def drop_all(duplicate_instace: frozenset[int]):
     return duplicate_instace
 
 
