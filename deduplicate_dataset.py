@@ -54,12 +54,16 @@ REMOVAL_STRATEGY = {
 
 def remove_duplicates(duplicates: Set[Set[int]], dataset_indices: List[int], removal_strategy: str):
     all_to_keep = set()
+    all_duplicate_indices = set()
     for duplicate in duplicates:
+        all_duplicate_indices = all_duplicate_indices.union(duplicate)
         all_to_keep = REMOVAL_STRATEGY[removal_strategy](duplicate, all_to_keep)
+    to_remove = all_duplicate_indices - all_to_keep
+
     removed = len(dataset_indices) - len(all_to_keep)
 
     print(f"removing a total of {removed} from {len(dataset_indices)} ({round(removed / len(dataset_indices), 4)*100}%)")
-    indices_to_keep = [idx for idx in dataset_indices if idx in all_to_keep]
+    indices_to_keep = [idx for idx in dataset_indices if idx not in to_remove]
     return indices_to_keep
 
 
