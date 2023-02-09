@@ -7,6 +7,7 @@ from tqdm import tqdm
 from utils import obtain_dataset
 import os
 
+
 def fetch_paths(path: str) -> List[str]:
     files = []
     for file in os.listdir(path):
