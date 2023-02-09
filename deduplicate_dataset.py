@@ -34,10 +34,12 @@ def keep_first(duplicate_instace: frozenset[int]):
     if len(duplicate_instace) == 0:
         return duplicate_instace
     try:
-        removed = frozenset(set(duplicate_instace)).pop()
+        removed = set(duplicate_instace)
+        removed.pop()
+        result = frozenset(removed)
     except KeyError:
         return duplicate_instace
-    return removed
+    return result
 
 
 def drop_all(duplicate_instace: frozenset[int]):
