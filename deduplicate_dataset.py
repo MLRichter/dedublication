@@ -31,8 +31,8 @@ def get_dataset_indices(dataset):
 
 
 def keep_first(duplicate_instace: frozenset[int]):
-    if len(duplicate_instace) == 0:
-        return duplicate_instace
+    #if len(duplicate_instace) == 0:
+    #    return duplicate_instace
     try:
         removed = set(duplicate_instace)
         removed.pop()
