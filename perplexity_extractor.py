@@ -16,7 +16,9 @@ DATASET = None
 MODELS = None
 
 dataset_mapper = {"c4_15M": lambda: datasets.load_dataset('teven/c4_15M', "binary")["train"],
-                  "parquet1": lambda: datasets.load_dataset("parquet", data_files="../test/*.parquet")["train"]}
+                  "parquet1": lambda: datasets.load_dataset("parquet", data_files="../test/*.parquet")["train"],
+                  "parquet3b": lambda: datasets.load_dataset("parquet", data_files="s3a://s-laion/bild_text/run1/2023-02-07-23-32-48")["train"],
+                  }
 
 def obtain_dataset(sample_start: int = 0, sample_end: int = None, dataset_key = "c4_15M"):
     global DATASET
