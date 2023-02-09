@@ -42,7 +42,6 @@ def keep_first(duplicate_instace: frozenset[int], all_to_keep: Set[int]):
         return all_to_keep
 
 
-
 def drop_all(duplicate_instace: frozenset[int], all_to_remove: Set[int]):
     return duplicate_instace
 
