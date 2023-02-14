@@ -1,4 +1,4 @@
-from typing import Tuple, List
+from typing import Tuple, List, Optional
 
 import boto3
 import tqdm
@@ -32,7 +32,7 @@ def reassemble_uris(bucket: str, filenames: List[str]):
     return [reassemble_uri(bucket, filename) for filename in filenames]
 
 
-def s3_listdir(s3_path: str):
+def s3_listdir(s3_path: str, filext: Optional[str] = None):
     bucket, prefix = split_s3_path(s3_path)
-    filenames = list_all_files_with_prefix(bucket, prefix)
+    filenames = list_all_files_with_prefix(bucket, prefix, filext=filext)
     return reassemble_uris(bucket=bucket, filenames=filenames)
