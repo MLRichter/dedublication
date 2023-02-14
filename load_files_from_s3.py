@@ -13,7 +13,7 @@ def split_s3_path(path: str) -> Tuple[str, str]:
 
 
 def list_all_files_with_prefix(bucket, prefix, filext=None):
-    s3 = boto3.resource('s3')
+    s3 = boto3.client('s3')
     result = s3.list_objects(Bucket=bucket, Prefix=prefix, Delimiter='/')
     filenames = []
     for cont in tqdm.tqdm(result["Contents"], "Reading files from S3"):
