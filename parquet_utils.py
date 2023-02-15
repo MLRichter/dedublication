@@ -85,3 +85,7 @@ class SharededParquetS3Dataset:
         file = self._find_correct_file(idx)
         true_index = self._obtain_true_index(idx=idx, file=file)
         return self._obtain_with_true_index(true_index=true_index, file=file)
+
+if __name__ == '__main__':
+
+    SharededParquetS3Dataset(s3_url="s3://s-laion/bild_text/run1/2023-02-07-23-32-48")
