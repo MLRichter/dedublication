@@ -88,4 +88,4 @@ class SharededParquetS3Dataset:
 
 if __name__ == '__main__':
 
-    SharededParquetS3Dataset(s3_url="s3://s-laion/bild_text/run1/2023-02-07-23-32-48")
+    SharededParquetS3Dataset(s3_url="s3://s-laion/bild_text/run1/2023-02-07-23-32-48/part_1/")
