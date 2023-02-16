@@ -36,3 +36,8 @@ def s3_listdir(s3_path: str, filext: Optional[str] = None):
     bucket, prefix = split_s3_path(s3_path)
     filenames = list_all_files_with_prefix(bucket, prefix, filext=filext)
     return reassemble_uris(bucket=bucket, filenames=filenames)
+
+def s3_listbucket(s3_path: str, filext: Optional[str] = None):
+    bucket, prefix = split_s3_path(s3_path)
+    filenames = list_all_files_with_prefix(bucket, prefix, filext=filext)
+    return bucket, filenames

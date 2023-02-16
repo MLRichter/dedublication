@@ -7,14 +7,23 @@ from load_files_from_s3 import s3_listdir, smart_open
 from joblib.memory import Memory
 from pyarrow import  parquet as pq
 from collections import OrderedDict
+import os
+import boto3
 
 mem = Memory(".cache")
 
 
-@mem.cache
 def _obtain_length(file: str) -> int:
-    table = pq.read_table(file)
-    return len(table)
+    meta = pq.read_metadata(file)
+    return meta.num_rows
+
+
+def fetch(bucket_name: str, key: str, abs_path: str, s3_client):
+    file = f'{abs_path}/{key}'
+    os.makedirs(file, exist_ok=True)
+    with open(file, 'wb') as data:
+        s3_client.download_fileobj(bucket_name, key, data)
+    return file
 
 
 @mem.cache
@@ -37,10 +46,11 @@ def _indexing_files(length_map: Dict[str, int]):
 
 class SharededParquetS3Dataset:
 
-    def __init__(self, s3_url: str, hash_idx: int = 0, uri_index: int = 1, text_idx: int = 2):
+    def __init__(self, s3_url: str, hash_idx: int = 0, uri_index: int = 1, text_idx: int = 2, cache_dir: str = "./s3filecache"):
         files = s3_listdir(s3_url, ".parquet")
         # ensure the files are allways the same
         files.sort()
+        self.chache_dir = cache_dir
         self.length_map = _obtain_all_lengths(files=files)
         self.index_map = _indexing_files(self.length_map)
         self.cache = None
@@ -48,6 +58,7 @@ class SharededParquetS3Dataset:
         self.hash_index = hash_idx
         self.uri_index = uri_index
         self.text_idx = text_idx
+        self.s3 = boto3.client('s3')
 
     def _check_for_index_in_infile(self, idx: int, file: str) -> bool:
         return idx >= self.index_map[file][0] and idx < self.index_map[file][1]
@@ -86,6 +97,6 @@ class SharededParquetS3Dataset:
         true_index = self._obtain_true_index(idx=idx, file=file)
         return self._obtain_with_true_index(true_index=true_index, file=file)
 
-if __name__ == '__main__':
 
+if __name__ == '__main__':
     SharededParquetS3Dataset(s3_url="s3://s-laion/bild_text/run1/2023-02-07-23-32-48/part_1/")
