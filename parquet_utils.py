@@ -120,7 +120,16 @@ class SharededParquetS3Dataset:
 
 
 if __name__ == '__main__':
-    ds = SharededParquetS3Dataset(s3_url="s3://s-laion/bild_text/run1/2023-02-07-23-32-48/part_1/")
+
+    def billions_parquet_dataset():
+        all_files = []
+        for part in range(5):
+            folder = "s3://s-laion/bild_text/run1/2023-02-07-23-32-48/part_{}".format(part)
+            files = s3_listdir(folder, ".parquet")
+            all_files.extend(files)
+        return SharededParquetS3Dataset(all_files, batch_size=50000)
+
+    ds = billions_parquet_dataset()
     print("Found", len(ds), "datapoints")
     for i in range(0, 12000):
         start = time.time()

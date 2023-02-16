@@ -11,13 +11,25 @@ from joblib import Parallel, delayed
 
 from riverbed.kenlm_manager import *
 import pandas as pd
+from parquet_utils import SharededParquetS3Dataset
+from load_files_from_s3 import s3_listdir
 
 DATASET = None
 MODELS = None
 
+
+def billions_parquet_dataset():
+    all_files = []
+    for part in range(5):
+        folder = "s3://s-laion/bild_text/run1/2023-02-07-23-32-48/part_{}".format(part)
+        files = s3_listdir(folder, ".parquet")
+        all_files.extend(files)
+    return SharededParquetS3Dataset(all_files, batch_size=50000)
+
+
 dataset_mapper = {"c4_15M": lambda: datasets.load_dataset('teven/c4_15M', "binary")["train"],
                   "parquet1": lambda: datasets.load_dataset("parquet", data_files="../test/*.parquet")["train"],
-                  "parquet3b": lambda: datasets.load_dataset("parquet", data_files="s3a://s-laion/bild_text/run1/2023-02-07-23-32-48")["train"],
+                  "parquet3b": lambda: billions_parquet_dataset(),
                   }
 
 def obtain_dataset(sample_start: int = 0, sample_end: int = None, dataset_key = "c4_15M"):
