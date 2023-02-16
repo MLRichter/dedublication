@@ -47,7 +47,7 @@ def _indexing_files(length_map: Dict[str, int]):
 
 class SharededParquetS3Dataset:
 
-    def __init__(self, s3_url: str, hash_idx: int = 0, uri_index: int = 1, text_idx: int = 2, cache_dir: str = "./s3filecache"):
+    def __init__(self, s3_url: str, hash_idx: int = 0, uri_index: int = 1, text_idx: int = 2, cache_dir: str = "./s3filecache", batch_size: int = 10000):
         files = s3_listdir(s3_url, ".parquet")
         # ensure the files are allways the same
         files.sort()
@@ -61,6 +61,8 @@ class SharededParquetS3Dataset:
         self.uri_index = uri_index
         self.text_idx = text_idx
         self.s3 = boto3.client('s3')
+        self.batch_size = batch_size
+        self.index_range = None
 
     def _check_for_index_in_infile(self, idx: int, file: str) -> bool:
         return idx >= self.index_map[file][0] and idx < self.index_map[file][1]
@@ -82,13 +84,18 @@ class SharededParquetS3Dataset:
         return true_index
 
 
+    def _check_index_cache_hit(self, true_index: int):
+        ...
 
     def _obtain_with_true_index(self, true_index: int, file: str):
         # check if cache miss; load if necessary
-        if file != self.cache_name:
-            table = pq.read_table(file)
+        if file != self.cache_name or self._check_index_cache_hit(true_index=true_index):
+            self.index_range = (true_index,  true_index + self.batch_size)
+            table = pq.read_table(file)[self.index_range[0]:self.index_range[1]]
             self.cache = table
             self.cache_name = file
+
+        batch_index = self.index_range[0]
 
         data_point =  {
             "hash": self.cache[self.hash_index][true_index].as_py(),
