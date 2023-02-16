@@ -71,7 +71,7 @@ class SharededParquetS3Dataset:
         self.index_range = None
 
     def _check_for_index_in_infile(self, idx: int, file: str) -> bool:
-        return idx >= self.index_map[file][0] and idx < self.index_map[file][1]
+        return idx >= self.index_map[file][0] and idx <= self.index_map[file][1]
 
     def _find_correct_file(self, idx: int) -> str:
         if self.cache_name is not None and self._check_for_index_in_infile(idx, self.cache_name):
