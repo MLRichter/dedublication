@@ -80,7 +80,7 @@ class SharededParquetS3Dataset:
 
     def _obtain_true_index(self, idx: int, file: str):
         true_index = idx - self.index_map[file][0]
-        assert true_index > 0
+        assert true_index >= 0
         return true_index
 
 
