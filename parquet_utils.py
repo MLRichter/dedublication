@@ -56,8 +56,10 @@ class SharededParquetS3Dataset:
         # ensure the files are allways the same
         files.sort()
         self.lock = FileLock(lock_file=lock, timeout=timeout)
-        self.length_map = _obtain_all_lengths(files=files)
-        self.index_map = _indexing_files(self.length_map)
+        index_lock = FileLock(lock_file="index.lock", timeout=300)
+        with index_lock:
+            self.length_map = _obtain_all_lengths(files=files)
+            self.index_map = _indexing_files(self.length_map)
         self.cache = None
         self.cache_name = None
         self.cache_ed_indices = None
