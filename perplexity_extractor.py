@@ -107,6 +107,9 @@ def process_chunks_in_sequence(chunks,
 
 
 def do_process_chunk(args):
+    if os.path.exists(args[-1]):
+        print(args[-1], "found allready, assuming chunk is processed")
+        return args[-1]
     process_args = args[:-1]
     print(process_args)
     csv = process_chunk(*process_args)
