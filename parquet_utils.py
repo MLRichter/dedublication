@@ -93,7 +93,7 @@ class SharededParquetS3Dataset:
         if self.index_range is None:
             return True
         else:
-            return not (true_index >= self.index_range[0] and true_index < self.index_range[1])
+            return not (true_index >= self.index_range[0] and true_index <= self.index_range[1])
 
     def _obtain_with_true_index(self, true_index: int, file: str):
         # check if cache miss; load if necessary
