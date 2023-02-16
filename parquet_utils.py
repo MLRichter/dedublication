@@ -79,7 +79,7 @@ class SharededParquetS3Dataset:
         for file in self.index_map.keys():
             if self._check_for_index_in_infile(idx, file):
                 return file
-        raise ValueError(f"index: {idx}, cannot find file in dataset of total length {self.__len__()}")
+        raise ValueError(f"index: {idx}, cannot find file in dataset of total length {self.__len__()}, the index map being: {self.index_map}")
 
     def __len__(self):
         return sum(list(self.length_map.values()))
