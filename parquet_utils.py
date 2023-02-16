@@ -2,6 +2,7 @@ import time
 from typing import Dict, List
 
 import pyarrow as pa
+from filelock import FileLock
 from tqdm import tqdm
 
 from load_files_from_s3 import s3_listdir, smart_open
@@ -47,11 +48,11 @@ def _indexing_files(length_map: Dict[str, int]):
 
 class SharededParquetS3Dataset:
 
-    def __init__(self, s3_url: str, hash_idx: int = 0, uri_index: int = 1, text_idx: int = 2, cache_dir: str = "./s3filecache", batch_size: int = 10000):
+    def __init__(self, s3_url: str, hash_idx: int = 0, uri_index: int = 1, text_idx: int = 2, lock: str = "shard.lock", batch_size: int = 10000, timeout: int = 60):
         files = s3_listdir(s3_url, ".parquet")
         # ensure the files are allways the same
         files.sort()
-        self.chache_dir = cache_dir
+        self.lock = FileLock(lock_file=lock, timeout=timeout)
         self.length_map = _obtain_all_lengths(files=files)
         self.index_map = _indexing_files(self.length_map)
         self.cache = None
@@ -94,7 +95,8 @@ class SharededParquetS3Dataset:
         # check if cache miss; load if necessary
         if file != self.cache_name or self._check_index_cache_hit(true_index=true_index):
             self.index_range = (true_index,  true_index + self.batch_size)
-            table = pq.read_table(file)[self.index_range[0]:self.index_range[1]]
+            with self.lock.acquire():
+                table = pq.read_table(file)[self.index_range[0]:self.index_range[1]]
             self.cache = table
             self.cache_name = file
 
