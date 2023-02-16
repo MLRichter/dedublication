@@ -1,5 +1,5 @@
 import time
-from typing import Dict, List
+from typing import Dict, List, Union
 
 import pyarrow as pa
 from filelock import FileLock
@@ -48,10 +48,11 @@ def _indexing_files(length_map: Dict[str, int]):
 
 class SharededParquetS3Dataset:
 
-    def __init__(self, s3_url: str, hash_idx: int = 0, uri_index: int = 1, text_idx: int = 2, lock: str = "shard.lock", batch_size: int = 10000, timeout: int = 60, slurmprocess_filelock: bool = True, slurm_process_per_lock: int = 16):
+    def __init__(self, s3_url: Union[str, List[str]], hash_idx: int = 0, uri_index: int = 1, text_idx: int = 2, lock: str = "shard.lock", batch_size: int = 10000, timeout: int = 60, slurmprocess_filelock: bool = True, slurm_process_per_lock: int = 16):
         if os.environ["SLURM_PROCID"] is not None and slurmprocess_filelock:
             lock = "shard{}.lock".format(int(os.environ["SLURM_PROCID"]) % slurm_process_per_lock)
-        files = s3_listdir(s3_url, ".parquet")
+
+        files = s3_listdir(s3_url, ".parquet") if isinstance(s3_url, str) else s3_url
         # ensure the files are allways the same
         files.sort()
         self.lock = FileLock(lock_file=lock, timeout=timeout)
