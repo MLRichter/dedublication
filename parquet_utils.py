@@ -41,7 +41,7 @@ def _indexing_files(length_map: Dict[str, int]):
     index_map = OrderedDict()
     current_index = 0
     for file, length in tqdm(length_map.items(), 'building indices'):
-        index_map[file] = (current_index, length-1)
+        index_map[file] = (current_index, current_index+length-1)
         current_index += length
     return index_map
 
