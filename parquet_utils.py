@@ -1,3 +1,4 @@
+import time
 from typing import Dict, List
 
 import pyarrow as pa
@@ -99,4 +100,11 @@ class SharededParquetS3Dataset:
 
 
 if __name__ == '__main__':
-    SharededParquetS3Dataset(s3_url="s3://s-laion/bild_text/run1/2023-02-07-23-32-48/part_1/")
+    ds = SharededParquetS3Dataset(s3_url="s3://s-laion/bild_text/run1/2023-02-07-23-32-48/part_1/")
+    print("Found", len(ds), "datapoints")
+    for i in range(0, 200):
+        start = time.time()
+        datapoint = ds[i]
+        total = time.time() - start
+        print("took", total, "seconds")
+    print("sample datapoint", ds[42])
