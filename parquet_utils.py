@@ -80,12 +80,15 @@ class SharededParquetS3Dataset:
 
     def _obtain_true_index(self, idx: int, file: str):
         true_index = idx - self.index_map[file][0]
-        assert true_index > 0
+        assert true_index >= 0
         return true_index
 
 
     def _check_index_cache_hit(self, true_index: int):
-        ...
+        if self.index_range is None:
+            return True
+        else:
+            return not (true_index >= self.index_range[0] and true_index < self.index_range[1])
 
     def _obtain_with_true_index(self, true_index: int, file: str):
         # check if cache miss; load if necessary
@@ -95,12 +98,14 @@ class SharededParquetS3Dataset:
             self.cache = table
             self.cache_name = file
 
-        batch_index = self.index_range[0]
+        # batch index is the true index relative to the start of the batch window
+        batch_index = true_index - self.index_range[0]
+        assert true_index >= 0
 
         data_point =  {
-            "hash": self.cache[self.hash_index][true_index].as_py(),
-            "uri": self.cache[self.uri_index][true_index].as_py(),
-            "text": self.cache[self.text_idx][true_index].as_py()
+            "hash": self.cache[self.hash_index][batch_index].as_py(),
+            "uri": self.cache[self.uri_index][batch_index].as_py(),
+            "text": self.cache[self.text_idx][batch_index].as_py()
         }
         return data_point
 
