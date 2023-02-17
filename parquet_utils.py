@@ -1,4 +1,5 @@
 import time
+import traceback
 from typing import Dict, List, Union
 
 import pyarrow as pa
@@ -105,10 +106,21 @@ class SharededParquetS3Dataset:
                     self.index_map[file][1]+1
                 )
             )
-            with self.lock.acquire():
-                table = pq.read_table(file)[self.index_range[0]:self.index_range[1]]
-            self.cache = table
-            self.cache_name = file
+
+            while True:
+                self.lock.acquire()
+                try:
+                    table = pq.read_table(file)[self.index_range[0]:self.index_range[1]]
+                    self.cache = table
+                    self.cache_name = file
+                    break
+                except Exception:
+                    traceback.print_exc()
+                finally:
+                    print("unable to load file, releasing lock and retrying")
+                    self.lock.release()
+
+
 
         # batch index is the true index relative to the start of the batch window
         batch_index = true_index - self.index_range[0]
