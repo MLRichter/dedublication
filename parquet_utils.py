@@ -93,12 +93,18 @@ class SharededParquetS3Dataset:
         if self.index_range is None:
             return True
         else:
-            return not (true_index >= self.index_range[0] and true_index <= self.index_range[1])
+            return not (true_index >= self.index_range[0] and true_index < self.index_range[1])
 
     def _obtain_with_true_index(self, true_index: int, file: str):
         # check if cache miss; load if necessary
         if file != self.cache_name or self._check_index_cache_hit(true_index=true_index):
-            self.index_range = (true_index,  true_index + self.batch_size)
+            self.index_range = (
+                true_index,
+                min(
+                    true_index + self.batch_size,
+                    self.index_map[file][1]+1
+                )
+            )
             with self.lock.acquire():
                 table = pq.read_table(file)[self.index_range[0]:self.index_range[1]]
             self.cache = table
