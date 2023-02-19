@@ -87,7 +87,11 @@ def process_chunk(start: int, stop: int, index: int, ds_key: str):
     dataset = obtain_dataset(0, dataset_key=ds_key)
     print("Loaded dataset chunk:", index)
     for idx in range(start, stop):
-        text = dataset[idx]["text"]
+        try:
+            text = dataset[idx]["text"]
+        except (IndexError, ValueError):
+            print("Could not load", idx)
+            continue
         perplexities = obtain_perplexity(models, text)
         result_csv = add_perplexities_to_result(result_csv, perplexities)
         result_csv["idx"].append(idx)
@@ -234,10 +238,11 @@ def main(n_samples: int = -1,
         with open(f"{rank}.done", "w"):
             pass
         wait_for_other_ranks_to_finish_if_necessary(rank=rank, world_size=world_size)
-        if world_size != 1:
-            print("Fetching all files")
-            files = fetch_files(sv_file, chunk_size, n_samples)
+
         if rank == 0:
+            if world_size != 1:
+                print("Fetching all files")
+                files = fetch_files(sv_file, chunk_size, n_samples)
             unify(savefiles=files, template=sv_file)
 
 
