@@ -178,8 +178,8 @@ def fetch_files(savefile_template: str, chunk_size: int, n_samples: int):
     chunks = split(n_samples, chunk_size)
     filenames = []
     for idx, (start, stop) in enumerate(tqdm.tqdm(chunks)):
-        savefile_template.format(start, stop)
-        filenames.append(savefile_template)
+        file = savefile_template.format(start, stop)
+        filenames.append(file)
     return filenames
 
 
